@@ -1,0 +1,133 @@
+﻿@page "/"
+@page "/login"
+@layout EmptyLayout
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+
+
+<div style="min-height: 100vh; background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <MudPaper Elevation="10" Class="pa-8 rounded-xl" Style="width: 100%; max-width: 420px; background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);">
+
+        @* Header *@
+        <MudStack AlignItems="AlignItems.Center" Class="mb-6">
+            <MudIcon Icon="@Icons.Material.Filled.AccountBalance"
+                     Style="font-size: 3rem; color: #00d4ff;" />
+            <MudText Typo="Typo.h4" Style="color: white; font-weight: 700;">
+                Fintech
+            </MudText>
+            <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.5);">
+                Acesse sua conta
+            </MudText>
+        </MudStack>
+
+        @* Alerta de erro *@
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">
+                @errorMessage
+            </MudAlert>
+        }
+
+        @* Formulário *@ 
+        <MudStack Spacing="4">
+            <MudTextField @bind-Value="loginRequest.Email"
+                          Label="E-mail"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Email"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Email"
+                          Style="color: white;"
+                          FullWidth="true" />
+
+            <MudTextField @bind-Value="loginRequest.Password"
+                          Label="Senha"
+                          Variant="Variant.Outlined"
+                          InputType="@passwordInput"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@passwordIcon"
+                          Style="color: white;"
+                          OnAdornmentClick="TogglePassword"
+                          FullWidth="true" />
+
+            <MudButton Variant="Variant.Filled"
+                       Color="MudBlazor.Color.Info"
+                       FullWidth="true"
+                       Size="MudBlazor.Size.Large"
+                       OnClick="HandleLogin"
+                       Disabled="@isLoading"
+                       Class="mt-2"
+                       Style="background: linear-gradient(90deg, #00d4ff, #0099cc); font-weight: 700;">
+                @if (isLoading)
+                {
+                    <MudProgressCircular Size="MudBlazor.Size.Small" Indeterminate="true" Class="mr-2" />
+                    <span>Entrando...</span>
+                }
+                else
+                {
+                    <span>Entrar</span>
+                }
+            </MudButton>
+        </MudStack>
+
+        @* Footer *@ 
+        <MudStack AlignItems="AlignItems.Center" Class="mt-6">
+            <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.5);">
+                Não tem cadastro?
+                <MudLink Href="/cadastro" Style="color: #00d4ff; font-weight: 600;">
+                    Cadastre-se
+                </MudLink>
+            </MudText>
+        </MudStack>
+
+    </MudPaper>
+</div>
+
+@code {
+    private LoginRequest loginRequest = new();
+    private string errorMessage = string.Empty;
+    private bool isLoading = false;
+
+    // ✅ Toggle mostrar/esconder senha
+    private InputType passwordInput = InputType.Password;
+    private string passwordIcon = Icons.Material.Filled.VisibilityOff;
+
+    private void TogglePassword()
+    {
+        if (passwordInput == InputType.Password)
+        {
+            passwordInput = InputType.Text;
+            passwordIcon = Icons.Material.Filled.Visibility;
+        }
+        else
+        {
+            passwordInput = InputType.Password;
+            passwordIcon = Icons.Material.Filled.VisibilityOff;
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            var result = await AuthService.LoginAsync(loginRequest);
+            if (result != null)
+                Navigation.NavigateTo("/home");
+            else
+                errorMessage = "Email ou senha inválidos.";
+        }
+        catch (Exception)
+        {
+            errorMessage = "Erro ao conectar com o servidor.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+  
+}

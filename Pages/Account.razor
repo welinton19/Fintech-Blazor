@@ -1,0 +1,134 @@
+﻿@page "/account"
+@layout MainLayout
+@* @inject IAccountService AccountService *@
+
+<div style="padding: 54px; margin-left: 33%;">
+    <MudText Typo="Typo.h5" Style="color: white; margin-bottom: 24px;">
+        🏦 Sua Conta Digital
+    </MudText>
+
+    @if (carregandoDados)
+    {
+        <MudProgressLinear Indeterminate="true" Color="MudBlazor.Color.Info" />
+        <MudText Style="color: rgba(255,255,255,0.5); margin-top: 8px;">
+            Carregando informações...
+        </MudText>
+    }
+    else if (!usuarioTemConta)
+    {
+        <MudPaper Elevation="4" Class="pa-8 rounded-xl"
+                  Style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); max-width: 500px;">
+            <MudStack AlignItems="AlignItems.Center" Spacing="4">
+                <MudIcon Icon="@Icons.Material.Filled.AccountBalance"
+                         Style="font-size: 4rem; color: #00d4ff;" />
+                <MudText Typo="Typo.h6" Style="color: white; text-align: center;">
+                    Você ainda não possui uma conta digital
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.5); text-align: center;">
+                    Crie sua conta agora e comece a movimentar seu dinheiro!
+                </MudText>
+                <MudButton Variant="Variant.Filled"
+                           Size="MudBlazor.Size.Large"
+                           OnClick="CriarNovaContaDigital"
+                           Disabled="@criandoConta"
+                           Style="background: linear-gradient(90deg, #00d4ff, #0099cc); font-weight: 700; color: white; width: 100%;">
+                    @if (criandoConta)
+                    {
+                        <MudProgressCircular Size="MudBlazor.Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>Criando conta...</span>
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-2" />
+                        <span>Criar Minha Conta Digital</span>
+                    }
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+    }
+    else
+    {
+        <MudGrid>
+            @* Card BRL *@
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Elevation="4" Class="pa-6 rounded-xl"
+                          Style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                    <MudStack Spacing="2">
+                        <MudStack Row="true" AlignItems="AlignItems.Center">
+                            <MudIcon Icon="@Icons.Material.Filled.AttachMoney"
+                                     Style="color: #00d4ff;" />
+                            <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.5);">
+                                Saldo BRL
+                            </MudText>
+                        </MudStack>
+                        <MudText Typo="Typo.h4" Style="color: white; font-weight: 700;">
+                            R$ @dadosConta.Saldo.ToString("N2")
+                        </MudText>
+                        <MudDivider Style="border-color: rgba(255,255,255,0.1);" />
+                        <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.5);">
+                            Agência: @dadosConta.Agencia | Conta: @dadosConta.Numero
+                        </MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            @* Ações rápidas *@
+            <MudItem xs="12">
+                <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">
+                    Ações Rápidas
+                </MudText>
+                <MudStack Row="true" Spacing="3">
+                    <MudButton Variant="Variant.Outlined"
+                               StartIcon="@Icons.Material.Filled.SwapHoriz"
+                               Style="border-color: #00d4ff; color: #00d4ff;"
+                               Href="/transaction">
+                        Transferir
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               StartIcon="@Icons.Material.Filled.Pix"
+                               Style="border-color: #00d4ff; color: #00d4ff;"
+                               Href="/pixkey">
+                        Chaves Pix
+                    </MudButton>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    }
+</div>
+
+@code {
+    private bool carregandoDados = true;
+    private bool usuarioTemConta = false;
+    private bool criandoConta = false;
+    private InformacoesConta dadosConta = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(1500); // futuramente chama API
+        usuarioTemConta = false;
+        carregandoDados = false;
+    }
+
+    private async Task CriarNovaContaDigital()
+    {
+        criandoConta = true;
+        await Task.Delay(1000); // futuramente chama API
+
+        dadosConta = new InformacoesConta
+        {
+            Agencia = "0001",
+            Numero = "12345-6",
+            Saldo = 0.00m
+        };
+
+        usuarioTemConta = true;
+        criandoConta = false;
+    }
+
+    public class InformacoesConta
+    {
+        public string Agencia { get; set; } = string.Empty;
+        public string Numero { get; set; } = string.Empty;
+        public decimal Saldo { get; set; }
+    }
+}

@@ -1,0 +1,138 @@
+﻿@page "/cryptowallet"
+@layout MainLayout
+
+<div style="padding: 54px; margin-left: 33%;">
+    <MudText Typo="Typo.h5" Style="color: white; margin-bottom: 24px;">
+        ₿ Sua Carteira Crypto
+    </MudText>
+
+    @if (carregandoDados)
+    {
+        <MudProgressLinear Indeterminate="true" Color="MudBlazor.Color.Info" />
+        <MudText Style="color: rgba(255,255,255,0.5); margin-top: 8px;">
+            Carregando carteira...
+        </MudText>
+    }
+    else if (!usuarioTemCarteira)
+    {
+        <MudPaper Elevation="4" Class="pa-8 rounded-xl"
+                  Style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); max-width: 500px;">
+            <MudStack AlignItems="AlignItems.Center" Spacing="4">
+                <MudIcon Icon="@Icons.Material.Filled.CurrencyBitcoin"
+                         Style="font-size: 4rem; color: #f7931a;" />
+                <MudText Typo="Typo.h6" Style="color: white; text-align: center;">
+                    Você ainda não possui uma carteira crypto
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.5); text-align: center;">
+                    Crie sua carteira e comece a investir em Bitcoin!
+                </MudText>
+                <MudButton Variant="Variant.Filled"
+                           Size="MudBlazor.Size.Large"
+                           OnClick="CriarNovaCarteiraDigital"
+                           Disabled="@criandoCarteira"
+                           Style="background: linear-gradient(90deg, #f7931a, #e67e00); font-weight: 700; color: white; width: 100%;">
+                    @if (criandoCarteira)
+                    {
+                        <MudProgressCircular Size="MudBlazor.Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>Criando carteira...</span>
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-2" />
+                        <span>Criar Minha Carteira Bitcoin</span>
+                    }
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+    }
+    else
+    {
+        <MudGrid>
+            @* Card BTC *@
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Elevation="4" Class="pa-6 rounded-xl"
+                          Style="background: rgba(247,147,26,0.1); border: 1px solid rgba(247,147,26,0.3);">
+                    <MudStack Spacing="2">
+                        <MudStack Row="true" AlignItems="AlignItems.Center">
+                            <MudIcon Icon="@Icons.Material.Filled.CurrencyBitcoin"
+                                     Style="color: #f7931a;" />
+                            <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.5);">
+                                Saldo BTC
+                            </MudText>
+                        </MudStack>
+                        <MudText Typo="Typo.h4" Style="color: white; font-weight: 700;">
+                            ₿ @dadosCarteira.Saldo.ToString("N8")
+                        </MudText>
+                        <MudDivider Style="border-color: rgba(255,255,255,0.1);" />
+                        <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.5);">
+                            Símbolo: @dadosCarteira.Simbolo
+                        </MudText>
+                        <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.3);">
+                            Endereço: @dadosCarteira.EnderecoCarteira
+                        </MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            @* Ações rápidas *@
+            <MudItem xs="12">
+                <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">
+                    Ações Rápidas
+                </MudText>
+                <MudStack Row="true" Spacing="3">
+                    <MudButton Variant="Variant.Outlined"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               Style="border-color: #f7931a; color: #f7931a;"
+                               Href="/deposit">
+                        Depositar BTC
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               StartIcon="@Icons.Material.Filled.SwapHoriz"
+                               Style="border-color: #f7931a; color: #f7931a;"
+                               Href="/transaction">
+                        Converter
+                    </MudButton>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    }
+</div>
+
+@code {
+    private bool carregandoDados = true;
+    private bool usuarioTemCarteira = false;
+    private bool criandoCarteira = false;
+    private InformacoesCarteira dadosCarteira = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(1500);
+        usuarioTemCarteira = false;
+        carregandoDados = false;
+    }
+
+    private async Task CriarNovaCarteiraDigital()
+    {
+        criandoCarteira = true;
+        await Task.Delay(1000);
+
+        dadosCarteira = new InformacoesCarteira
+        {
+            Usuario = 1,
+            Simbolo = "BTC",
+            EnderecoCarteira = "bc1q...xyz",
+            Saldo = 0.00m
+        };
+
+        usuarioTemCarteira = true;
+        criandoCarteira = false;
+    }
+
+    public class InformacoesCarteira
+    {
+        public long Usuario { get; set; }
+        public string Simbolo { get; set; } = string.Empty;
+        public string EnderecoCarteira { get; set; } = string.Empty;
+        public decimal Saldo { get; set; }
+    }
+}

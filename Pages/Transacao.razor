@@ -1,0 +1,119 @@
+﻿@page "/transaction"
+@layout MainLayout
+
+<div style="padding: 54px;">
+    <MudText Typo="Typo.h5" Style="color: white; margin-bottom: 24px;">
+        💸 Faça uma nova Transação
+    </MudText>
+
+    @* Seletor de tipo *@
+    <MudToggleGroup T="string" @bind-Value="tipoTransacao"
+                    Style="margin-bottom: 24px;">
+        <MudToggleItem Value="@("BRL")" Text="💵 Moeda BRL" />
+        <MudToggleItem Value="@("CRYPTO")" Text="₿ Crypto BTC" />
+    </MudToggleGroup>
+
+    <MudPaper Elevation="4" Class="pa-6 rounded-xl"
+              Style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); max-width: 500px;">
+
+        @* Saldo disponível *@
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-6">
+            <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet"
+                     Style="color: #00d4ff;" />
+            <div>
+                <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.5);">
+                    Saldo Disponível
+                </MudText>
+                <MudText Typo="Typo.h6" Style="color: white; font-weight: 700;">
+                    @if (tipoTransacao == "BRL")
+                    {
+                        <span>R$ @saldoBRL.ToString("N2")</span>
+                    }
+                    else
+                    {
+                        <span>₿ @saldoBTC.ToString("N8")</span>
+                    }
+                </MudText>
+            </div>
+        </MudStack>
+
+        @* Campos do formulário *@
+        <MudStack Spacing="4">
+            <MudTextField @bind-Value="transactionRequest.ToAccountId"
+                          Label="Conta Destino"
+                          Variant="Variant.Outlined"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Person"
+                          Style="color: white;"
+                          FullWidth="true" />
+
+            <MudNumericField @bind-Value="transactionRequest.Amount"
+                             Label="@(tipoTransacao == "BRL" ? "Valor em R$" : "Valor em BTC")"
+                             Variant="Variant.Outlined"
+                             Adornment="Adornment.Start"
+                             AdornmentIcon="@(tipoTransacao == "BRL" ? Icons.Material.Filled.AttachMoney : Icons.Material.Filled.CurrencyBitcoin)"
+                             Format="N2"
+                             Style="color: white;"
+                             FullWidth="true" />
+
+            <MudTextField @bind-Value="transactionRequest.Description"
+                          Label="Descrição (opcional)"
+                          Variant="Variant.Outlined"
+                          Style="color: white;"
+                          FullWidth="true" />
+
+            @* Resumo *@
+            @if (transactionRequest.Amount > 0)
+            {
+                <MudPaper Class="pa-4 rounded-lg"
+                          Style="background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2);">
+                    <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.7);">
+                        Resumo da transação
+                    </MudText>
+                    <MudText Style="color: white;">
+                        Valor: @(tipoTransacao == "BRL" ? $"R$ {transactionRequest.Amount:N2}" : $"₿ {transactionRequest.Amount:N8}")
+                    </MudText>
+                </MudPaper>
+            }
+
+            <MudButton Variant="Variant.Filled"
+                       FullWidth="true"
+                       Size="MudBlazor.Size.Large"
+                       OnClick="HandleTransacao"
+                       Disabled="@isLoading"
+                       Style="background: linear-gradient(90deg, #00d4ff, #0099cc); font-weight: 700; color: white;">
+                @if (isLoading)
+                {
+                    <MudProgressCircular Size="MudBlazor.Size.Small" Indeterminate="true" Class="mr-2" />
+                    <span>Processando...</span>
+                }
+                else
+                {
+                    <span>Confirmar Transação</span>
+                }
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+</div>
+
+@code {
+    private TransactionRequest transactionRequest = new();
+    private string tipoTransacao = "BRL"; // ✅ toggle entre BRL e CRYPTO
+    private bool isLoading = false;
+    private decimal saldoBRL = 1500.00m;  // futuramente vem da API
+    private decimal saldoBTC = 0.00234m;  // futuramente vem da API
+
+    private async Task HandleTransacao()
+    {
+        isLoading = true;
+        try
+        {
+            // futuramente chama a API
+            await Task.Delay(1000);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

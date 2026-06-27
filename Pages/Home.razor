@@ -1,0 +1,182 @@
+﻿@page "/home"
+@using ApexCharts
+@layout MainLayout
+@inject NavigationManager Navigation
+@inject HttpClient Http
+@implements IDisposable
+
+
+
+
+<div class="content">
+    <h3 style="color:white;">Bem-vindo ao sistema FinTech</h3>
+    <p style="color:white;" >Seu Painel Financeiro</p>
+</div>
+
+<MudContent class="graph-1">
+
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
+        <!-- Gráfico 1: Moedas Tradicionais -->
+        <div style="flex: 1; min-width: 400px; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+            <ApexChart TItem="MoedaModel" Title="Moedas Tradicionais (BRL)" @ref="graficoMoedas">
+                <ApexChartOptions>
+                    
+                </ApexChartOptions>
+                <ApexPointSeries TItem="MoedaModel" Items="historicoMoedas" Name="Dólar" SeriesType="SeriesType.Line" XValue="e => e.Horario" YValue="e => e.Dolar" />
+                <ApexPointSeries TItem="MoedaModel" Items="historicoMoedas" Name="Euro" SeriesType="SeriesType.Line" XValue="e => e.Horario" YValue="e => e.Euro" />
+            </ApexChart>
+        </div>
+
+        <!-- Gráfico 2: Criptomoedas -->
+        <div style="flex: 1; min-width: 400px; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+            <ApexChart TItem="CryptoModel"  Title="Bitcoin (BRL) " @ref="graficoCrypto" >
+                 <ApexChartOptions>
+                    
+                 </ApexChartOptions>
+                <ApexPointSeries TItem="CryptoModel" Items="historicoCrypto" Name="BTC" SeriesType="SeriesType.Area" XValue="e => e.Horario" YValue="e => e.Bitcoin" />
+            </ApexChart>
+        </div>
+    </div>
+</MudContent>
+<div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;border: 1px solid #ddd; padding: 15px; border-radius: 8px; width:750px; ">
+    <h3 class="data-transacao" style="color: white">Últimas Transações</h3>
+    <br />
+    <span style="color:white;">+</span><p style="color: greenyellow;">Depósito BTC R$ 3.000</p>
+    <br />
+    <span style="color:white;">-</span><p style="color: red;">Pagamento Pix R$ 1.000</p>
+</div>
+
+
+@code {
+
+    private string EmailUsuario = "nenem@email.com";
+    private ApexChart<MoedaModel>? graficoMoedas;
+    private ApexChart<CryptoModel>? graficoCrypto;
+    private ApexChartOptions<MoedaModel> opcoesGrafico1 { get; set; } = new();
+    private ApexChartOptions<CryptoModel> opcoesGrafico2 { get; set; } = new();
+
+    private List<MoedaModel> historicoMoedas = new();
+    private List<CryptoModel> historicoCrypto = new();
+
+    private CancellationTokenSource? _cts;
+
+    private void Logout()
+    {
+        Navigation.NavigateTo("/login", true);
+    }
+
+    protected override void OnInitialized()
+    {
+        _cts = new CancellationTokenSource();
+        // Dispara o loop assíncrono de consumo da API
+        _ = IniciarConsumoApi(_cts.Token);
+        // 1. Configurando Cores do Gráfico 1 (Moedas)
+        ConfigurarEstiloGrafico(opcoesGrafico1);
+
+        // 2. Configurando Cores do Gráfico 2 (Crypto)
+        ConfigurarEstiloGrafico(opcoesGrafico2);
+
+        // Inicia o fluxo da API existente...
+        _cts = new CancellationTokenSource();
+        _ = IniciarConsumoApi(_cts.Token);
+    }
+
+    private async Task IniciarConsumoApi(CancellationToken token)
+    {
+        // Intervalo de atualização (A API pública possui cache de 1 minuto sem chave, ajuste conforme seu plano)
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+
+        while (await timer.WaitForNextTickAsync(token) && !token.IsCancellationRequested)
+        {
+            try
+            {
+                // Chamada GET para buscar todas as cotações em uma única requisição
+                var url = "https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL,BTC-BRL";
+                var dados = await Http.GetFromJsonAsync<AwesomeApiResponse>(url, token);
+
+                if (dados != null)
+                {
+                    var horarioAtual = DateTime.Now.ToString("HH:mm:ss");
+
+                    // Convertendo os valores de string ("bid") para decimal de forma segura
+                    decimal.TryParse(dados.USDBRL?.Bid, System.Globalization.CultureInfo.InvariantCulture, out decimal usd);
+                    decimal.TryParse(dados.EURBRL?.Bid, System.Globalization.CultureInfo.InvariantCulture, out decimal eur);
+                    decimal.TryParse(dados.BTCBRL?.Bid, System.Globalization.CultureInfo.InvariantCulture, out decimal btc);
+
+                    // Adiciona os dados aos históricos
+                    historicoMoedas.Add(new MoedaModel { Horario = horarioAtual, Dolar = usd, Euro = eur });
+                    historicoCrypto.Add(new CryptoModel { Horario = horarioAtual, Bitcoin = btc });
+
+                    // Mantém apenas os últimos 10 registros na tela para preservar a performance
+                    if (historicoMoedas.Count > 10) historicoMoedas.RemoveAt(0);
+                    if (historicoCrypto.Count > 10) historicoCrypto.RemoveAt(0);
+
+                    // Re-renderiza e anima os gráficos de forma assíncrona
+                    if (graficoMoedas != null) await graficoMoedas.UpdateSeriesAsync(animate: true);
+                    if (graficoCrypto != null) await graficoCrypto.UpdateSeriesAsync(animate: true);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao buscar dados da API: {ex.Message}");
+            }
+        }
+
+    }
+    private void ConfigurarEstiloGrafico<T>(ApexChartOptions<T> options) where T : class
+    {
+        // Cor do Título Principal
+        options.Title = new Title
+        {
+            Style = new TitleStyle { Color = "#FFFFFF", FontSize = "16px" }
+        };
+
+        // Cor dos textos do Eixo X (Meses/Horários)
+        options.Xaxis = new XAxis
+        {
+            Labels = new XAxisLabels
+            {
+                Style = new AxisLabelStyle { Colors = new List<string> { "#FFFFFF" } }
+            }
+        };
+
+        // Cor dos textos do Eixo Y (Valores/Números)
+        options.Yaxis = new List<YAxis>
+        {
+            new YAxis
+            {
+                Labels = new YAxisLabels
+                {
+                    Style = new AxisLabelStyle { Colors = new List<string> { "#FFFFFF" } }
+                }
+            }
+        };
+
+        // Opcional: Cor dos textos da Legenda inferior (Dólar, Euro, BTC)
+        options.Legend = new Legend
+        {
+            Labels = new LegendLabels { Colors = new List<string> { "#FFFFFF" } }
+        };
+    }
+
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+    }
+
+    
+    public class MoedaModel
+    {
+        public string Horario { get; set; } = string.Empty;
+        public decimal Dolar { get; set; }
+        public decimal Euro { get; set; }
+    }
+
+    public class CryptoModel
+    {
+        public string Horario { get; set; } = string.Empty;
+        public decimal Bitcoin { get; set; }
+    }
+}
