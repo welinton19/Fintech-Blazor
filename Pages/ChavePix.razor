@@ -1,7 +1,241 @@
-﻿@page "/chavepix"
+﻿@page "/pixkey"
 @layout MainLayout
 
+<div style="padding: 54px;">
+    <MudText Typo="Typo.h5" Style="color: white; margin-bottom: 24px;">
+        🔑 Chaves Pix
+    </MudText>
+
+    @* Lista de chaves existentes *@
+    @if (carregandoDados)
+    {
+        <MudProgressLinear Indeterminate="true" Color="MudBlazor.Color.Info" />
+        <MudText Style="color: rgba(255,255,255,0.5); margin-top: 8px;">
+            Carregando chaves...
+        </MudText>
+    }
+    else
+    {
+        @* Cards das chaves cadastradas *@
+        @if (PixKeysCadastradas.Any())
+        {
+            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">
+                Suas chaves cadastradas (@PixKeysCadastradas.Count/3)
+            </MudText>
+
+            <MudGrid Class="mb-6">
+                @foreach (var chave in PixKeysCadastradas)
+                {
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudPaper Elevation="4" Class="pa-4 rounded-xl"
+                                  Style="background: rgba(255,255,255,0.05); border: 1px solid rgba(0,212,255,0.2);">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@GetIconeChave(chave.Tipo)"
+                                             Style="color: #00d4ff;" />
+                                    <div>
+                                        <MudText Typo="Typo.caption"
+                                                 Style="color: rgba(255,255,255,0.5);">
+                                            @chave.Tipo
+                                        </MudText>
+                                        <MudText Style="color: white; font-size: 0.9rem;">
+                                            @chave.Valor
+                                        </MudText>
+                                    </div>
+                                </MudStack>
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               Style="color: #ff6b6b;"
+                                               OnClick="() => RemoverChave(chave)" />
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+
+        @* Formulário para nova chave *@
+        @if (PixKeysCadastradas.Count < 3)
+        {
+            <MudPaper Elevation="4" Class="pa-6 rounded-xl"
+                      Style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); max-width: 500px;">
+
+                <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">
+                    Cadastrar Nova Chave
+                </MudText>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">
+                        @errorMessage
+                    </MudAlert>
+                }
+
+                @if (!string.IsNullOrEmpty(successMessage))
+                {
+                    <MudAlert Severity="Severity.Success" Class="mb-4" Dense="true">
+                        @successMessage
+                    </MudAlert>
+                }
+
+                <MudStack Spacing="4">
+                    @* Tipo da chave *@
+                    <MudSelect T="string"
+                               @bind-Value="tipoChaveSelecionado"
+                               Label="Tipo de Chave"
+                               Variant="Variant.Outlined"
+                               Style="color: white;"
+                               FullWidth="true">
+                        @foreach (var tipo in tiposDisponiveis)
+                        {
+                            <MudSelectItem Value="@tipo">@tipo</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    @* Valor da chave *@
+                    <MudTextField @bind-Value="valorChave"
+                                  Label="@GetLabelChave()"
+                                  Variant="Variant.Outlined"
+                                  Placeholder="@GetPlaceholderChave()"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@GetIconeChave(tipoChaveSelecionado)"
+                                  Style="color: white;"
+                                  FullWidth="true" />
+
+                    <MudButton Variant="Variant.Filled"
+                               FullWidth="true"
+                               Size="MudBlazor.Size.Large"
+                               OnClick="CadastrarChave"
+                               Disabled="@cadastrando"
+                               Style="background: linear-gradient(90deg, #00d4ff, #0099cc); font-weight: 700; color: white;">
+                        @if (cadastrando)
+                        {
+                            <MudProgressCircular Size="MudBlazor.Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Cadastrando...</span>
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-2" />
+                            <span>Cadastrar Chave</span>
+                        }
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Style="max-width: 500px;">
+                Você já atingiu o limite de 3 chaves Pix!
+            </MudAlert>
+        }
+    }
+</div>
 
 @code {
+    private bool carregandoDados = true;
+    private bool cadastrando = false;
+    private string tipoChaveSelecionado = "CPF";
+    private string valorChave = string.Empty;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
 
+    private List<string> tiposDisponiveis = new() { "CPF", "Email", "Telefone" };
+
+    private List<PixKey> PixKeysCadastradas = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(1000); // futuramente chama API
+        carregandoDados = false;
+    }
+
+    private async Task CadastrarChave()
+    {
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+
+        // ✅ Validação
+        if (string.IsNullOrEmpty(valorChave))
+        {
+            errorMessage = "Preencha o valor da chave.";
+            return;
+        }
+
+        // ✅ Verifica tipo duplicado
+        if (PixKeysCadastradas.Any(c => c.Tipo == tipoChaveSelecionado))
+        {
+            errorMessage = $"Você já possui uma chave do tipo {tipoChaveSelecionado}.";
+            return;
+        }
+
+        cadastrando = true;
+
+        try
+        {
+            await Task.Delay(1000); // futuramente chama API
+
+            PixKeysCadastradas.Add(new PixKey
+            {
+                Tipo = tipoChaveSelecionado,
+                Valor = valorChave
+            });
+
+            valorChave = string.Empty;
+            successMessage = "Chave Pix cadastrada com sucesso!";
+
+            // ✅ Atualiza tipos disponíveis removendo o que já foi cadastrado
+            tiposDisponiveis = new List<string> { "CPF", "Email", "Telefone" }
+                .Where(t => !PixKeysCadastradas.Any(c => c.Tipo == t))
+                .ToList();
+
+            if (tiposDisponiveis.Any())
+                tipoChaveSelecionado = tiposDisponiveis.First();
+        }
+        finally
+        {
+            cadastrando = false;
+        }
+    }
+
+    private void RemoverChave(PixKey chave)
+    {
+        PixKeysCadastradas.Remove(chave);
+
+        // ✅ Devolve o tipo removido para a lista
+        tiposDisponiveis = new List<string> { "CPF", "Email", "Telefone" }
+            .Where(t => !PixKeysCadastradas.Any(c => c.Tipo == t))
+            .ToList();
+
+        if (tiposDisponiveis.Any())
+            tipoChaveSelecionado = tiposDisponiveis.First();
+    }
+
+    private string GetLabelChave() => tipoChaveSelecionado switch
+    {
+        "CPF" => "CPF",
+        "Email" => "E-mail",
+        "Telefone" => "Telefone",
+        _ => "Valor"
+    };
+
+    private string GetPlaceholderChave() => tipoChaveSelecionado switch
+    {
+        "CPF" => "000.000.000-00",
+        "Email" => "email@exemplo.com",
+        "Telefone" => "+55 11 99999-9999",
+        _ => ""
+    };
+
+    private string GetIconeChave(string tipo) => tipo switch
+    {
+        "CPF" => Icons.Material.Filled.Badge,
+        "Email" => Icons.Material.Filled.Email,
+        "Telefone" => Icons.Material.Filled.Phone,
+        _ => Icons.Material.Filled.Key
+    };
+
+    public class PixKey
+    {
+        public string Tipo { get; set; } = string.Empty;
+        public string Valor { get; set; } = string.Empty;
+    }
 }

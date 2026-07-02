@@ -1,5 +1,201 @@
-﻿<h3>AtualizarCadastro</h3>
+﻿@page "/atualizar-cadastro"
+@layout MainLayout
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+
+<div style="margin-top:50px; min-height: 100vh; background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); display: flex; align-items: center; justify-content: center; padding: 20px;">
+	<MudPaper Elevation="10" Class="pa-10 rounded-xl" Style="width:100%; max-width:420px; background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);">
+		@*Header*@
+		<MudStack AlignItems="AlignItems.Center" Class="mb-8">
+			<MudIcon Icon="@Icons.Material.Filled.Face"
+					 Style="font-size: 3rem; color: #00d4ff" />
+			<MudText Typo="Typo.h4" Style="color: white; font-weight: 700;">
+				Fintech
+			</MudText>
+			<MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.5);">
+				Atualizar Cadastro
+			</MudText>
+		</MudStack>
+
+		@* Alerta de erro *@
+		@if (!string.IsNullOrEmpty(errorMessage))
+		{
+			<MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">
+				@errorMessage
+			</MudAlert>
+		}
+
+		@*Fomulario*@
+		<MudStack Spacing="4">
+			<MudTextField @bind-Value="cadastroRequest.Name"
+						  Label="Name"
+						  Variant="Variant.Outlined"
+						  InputType="InputType.Text"
+						  Adornment="Adornment.Start"
+						  Style="color:white;"
+						  FullWidth="true" />
+			<MudTextField @bind-Value="cadastroRequest.Cpf"
+						  Label="Cpf"
+						  Variant="Variant.Outlined"
+						  InputType="InputType.Text"
+						  Adornment="Adornment.Start"
+						  Style="color:white;"
+						  FullWidth="true" />
+			<MudTextField @bind-Value="cadastroRequest.Email"
+						  Label="E-mail"
+						  Variant="Variant.Outlined"
+						  InputType="InputType.Email"
+						  Adornment="Adornment.Start"
+						  Style="color:white;"
+						  FullWidth="true" />
+			<MudTextField @bind-Value="cadastroRequest.DataDeNascimento"
+						  Label="Data de Nascimento"
+						  Variant="Variant.Outlined"
+						  InputType="InputType.Date"
+						  Adornment="Adornment.Start"
+						  Style="color:white;"
+						  FullWidth="true" />
+			<MudTextField @bind-Value="cadastroRequest.Cidade"
+						  Label="Cidade"
+						  Variant="Variant.Outlined"
+						  InputType="InputType.Text"
+						  Adornment="Adornment.Start"
+						  Style="color:white;"
+						  FullWidth="true" />
+			<MudTextField @bind-Value="cadastroRequest.Cep"
+						  Label="CEP"
+						  Variant="Variant.Outlined"
+						  InputType="InputType.Text"
+						  Adornment="Adornment.Start"
+						  Style="color:white;"
+						  FullWidth="true" />
+			<MudTextField @bind-Value="cadastroRequest.Logradouro"
+						  Label="Logradouro"
+						  Variant="Variant.Outlined"
+						  InputType="InputType.Text"
+						  Adornment="Adornment.Start"
+						  Style="color:white;"
+						  FullWidth="true" />
+			<MudTextField @bind-Value="cadastroRequest.Estado"
+						  Label="Estado"
+						  Variant="Variant.Outlined"
+						  InputType="InputType.Text"
+						  Adornment="Adornment.Start"
+						  Style="color:white;"
+						  FullWidth="true" />
+			<MudTextField @bind-Value="cadastroRequest.Phone"
+						  Label="Telefone"
+						  Variant="Variant.Outlined"
+						  InputType="InputType.Telephone"
+						  Adornment="Adornment.Start"
+						  Style="color:white;"
+						  FullWidth="true" />
+			<MudTextField @bind-Value="cadastroRequest.Password"
+						  Label="Password"
+						  Variant="Variant.Outlined"
+						  InputType="@InputType.Password"
+						  Adornment="Adornment.End"
+						  AdornmentIcon="@passwordIcon"
+						  Style="color: white;"
+						  OnAdornmentClick="TogglePassword"
+						  FullWidth="true" />
+			<MudTextField @bind-Value="cadastroRequest.ConfirmPassword"
+						  Label="Confirmar Senha"
+						  Variant="Variant.Outlined"
+						  InputType="InputType.Password"
+						  Adornment="Adornment.End"
+						  AdornmentIcon="@passwordIcon"
+						  Style="color: white;"
+						  OnAdornmentClick="TogglePassword"
+						  FullWidth="true" />
+
+			<MudButton Variant="Variant.Filled"
+					   Color="MudBlazor.Color.Info"
+					   FullWidth="true"
+					   Size="MudBlazor.Size.Large"
+					   OnClick="HandleCadastro"
+					   Disabled="@isLoading"
+					   Class="mt-2"
+					   Style="background: linear-gradient(90deg, #00d4ff, #0099cc); font-weight: 700;">
+				@if (isLoading)
+				{
+					<MudProgressCircular Size="MudBlazor.Size.Small" Indeterminate="true" Class="mr-2" />
+					<span>Entrando...</span>
+				}
+				else
+				{
+					<span>Cadastrar</span>
+				}
+			</MudButton>
+
+
+		</MudStack>
+
+
+	</MudPaper>
+</div>
 
 @code {
+	private CadastroRequest cadastroRequest = new();
+	private string errorMessage = string.Empty;
+	private bool isLoading = false;
 
+	private InputType passwordInput = InputType.Password;
+	private string passwordIcon = Icons.Material.Filled.VisibilityOff;
+
+	private void TogglePassword()
+	{
+		if (passwordInput == InputType.Password)
+		{
+			passwordInput = InputType.Text;
+			passwordIcon = Icons.Material.Filled.Visibility;
+		}
+		else
+		{
+			passwordInput = InputType.Password;
+			passwordIcon = Icons.Material.Filled.VisibilityOff;
+		}
+	}
+
+	private async Task HandleCadastro()
+	{
+		isLoading = true;
+		errorMessage = string.Empty;
+
+		try
+		{
+			// ✅ Valida campos obrigatórios
+			if (string.IsNullOrEmpty(cadastroRequest.Name) ||
+				string.IsNullOrEmpty(cadastroRequest.Email) ||
+				string.IsNullOrEmpty(cadastroRequest.Password))
+			{
+				errorMessage = "Preencha todos os campos obrigatórios.";
+				return;
+			}
+
+			// ✅ Valida confirmação de senha
+			if (cadastroRequest.Password != cadastroRequest.ConfirmPassword)
+			{
+				errorMessage = "As senhas não conferem.";
+				return;
+			}
+
+			var sucesso = await AuthService.CadastroAsync(cadastroRequest);
+
+			if (sucesso)
+				Navigation.NavigateTo("/login");
+			else
+				errorMessage = "Erro ao realizar cadastro. Tente novamente.";
+		}
+		catch (Exception)
+		{
+			errorMessage = "Erro ao conectar com o servidor.";
+		}
+		finally
+		{
+			isLoading = false;
+		}
+	}
 }
+

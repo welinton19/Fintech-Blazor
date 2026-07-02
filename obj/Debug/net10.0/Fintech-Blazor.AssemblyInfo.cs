@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Fintech-Blazor")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3b44d3ea4464d1ef9d69c30cf12ede1413f1732b")]
 [assembly: System.Reflection.AssemblyProductAttribute("Fintech-Blazor")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Fintech-Blazor")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
