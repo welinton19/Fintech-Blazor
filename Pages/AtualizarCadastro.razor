@@ -28,93 +28,58 @@
 
 		@*Fomulario*@
 		<MudStack Spacing="4">
-			<MudTextField @bind-Value="cadastroRequest.Name"
+			<MudTextField @bind-Value="atualizarCadastroRequest.Name"
 						  Label="Name"
 						  Variant="Variant.Outlined"
 						  InputType="InputType.Text"
 						  Adornment="Adornment.Start"
 						  Style="color:white;"
 						  FullWidth="true" />
-			<MudTextField @bind-Value="cadastroRequest.Cpf"
-						  Label="Cpf"
-						  Variant="Variant.Outlined"
-						  InputType="InputType.Text"
-						  Adornment="Adornment.Start"
-						  Style="color:white;"
-						  FullWidth="true" />
-			<MudTextField @bind-Value="cadastroRequest.Email"
+			
+			<MudTextField @bind-Value="atualizarCadastroRequest.Email"
 						  Label="E-mail"
 						  Variant="Variant.Outlined"
 						  InputType="InputType.Email"
 						  Adornment="Adornment.Start"
 						  Style="color:white;"
 						  FullWidth="true" />
-			<MudTextField @bind-Value="cadastroRequest.DataDeNascimento"
-						  Label="Data de Nascimento"
-						  Variant="Variant.Outlined"
-						  InputType="InputType.Date"
-						  Adornment="Adornment.Start"
-						  Style="color:white;"
-						  FullWidth="true" />
-			<MudTextField @bind-Value="cadastroRequest.Cidade"
+			
+			<MudTextField @bind-Value="atualizarCadastroRequest.Cidade"
 						  Label="Cidade"
 						  Variant="Variant.Outlined"
 						  InputType="InputType.Text"
 						  Adornment="Adornment.Start"
 						  Style="color:white;" 
 						  FullWidth="true" />
-			<MudTextField @bind-Value="cadastroRequest.Cep"
+			<MudTextField @bind-Value="atualizarCadastroRequest.Cep"
 						  Label="CEP"
 						  Variant="Variant.Outlined"
 						  InputType="InputType.Text"
 						  Adornment="Adornment.Start"
 						  Style="color:white;"
 						  FullWidth="true" />
-			<MudTextField @bind-Value="cadastroRequest.Logradouro"
+			<MudTextField @bind-Value="atualizarCadastroRequest.Logradouro"
 						  Label="Logradouro"
 						  Variant="Variant.Outlined"
 						  InputType="InputType.Text"
 						  Adornment="Adornment.Start"
 						  Style="color:white;"
 						  FullWidth="true" />
-			<MudTextField @bind-Value="cadastroRequest.Estado"
+			<MudTextField @bind-Value="atualizarCadastroRequest.Estado"
 						  Label="Estado"
 						  Variant="Variant.Outlined"
 						  InputType="InputType.Text"
 						  Adornment="Adornment.Start"
 						  Style="color:white;"
 						  FullWidth="true" />
-			<MudTextField @bind-Value="cadastroRequest.Phone"
-						  Label="Telefone"
-						  Variant="Variant.Outlined"
-						  InputType="InputType.Telephone"
-						  Adornment="Adornment.Start"
-						  Style="color:white;"
-						  FullWidth="true" />
-			<MudTextField @bind-Value="cadastroRequest.Password"
-						  Label="Password"
-						  Variant="Variant.Outlined"
-						  InputType="@InputType.Password"
-						  Adornment="Adornment.End"
-						  AdornmentIcon="@passwordIcon"
-						  Style="color: white;"
-						  OnAdornmentClick="TogglePassword"
-						  FullWidth="true" />
-			<MudTextField @bind-Value="cadastroRequest.ConfirmPassword"
-						  Label="Confirmar Senha"
-						  Variant="Variant.Outlined"
-						  InputType="InputType.Password"
-						  Adornment="Adornment.End"
-						  AdornmentIcon="@passwordIcon"
-						  Style="color: white;"
-						  OnAdornmentClick="TogglePassword"
-						  FullWidth="true" />
+			
+			
 
 			<MudButton Variant="Variant.Filled"
 					   Color="MudBlazor.Color.Info"
 					   FullWidth="true"
 					   Size="MudBlazor.Size.Large"
-					   OnClick="HandleCadastro"
+					   OnClick="HandleAtualizarCadastro"
 					   Disabled="@isLoading"
 					   Class="mt-2"
 					   Style="background: linear-gradient(90deg, #00d4ff, #0099cc); font-weight: 700;">
@@ -137,28 +102,13 @@
 </div>
 
 @code {
-	private CadastroRequest cadastroRequest = new();
+	private AtualizarCadastroRequest atualizarCadastroRequest = new();
 	private string errorMessage = string.Empty;
 	private bool isLoading = false;
 
-	private InputType passwordInput = InputType.Password;
-	private string passwordIcon = Icons.Material.Filled.VisibilityOff;
+	
 
-	private void TogglePassword()
-	{
-		if (passwordInput == InputType.Password)
-		{
-			passwordInput = InputType.Text;
-			passwordIcon = Icons.Material.Filled.Visibility;
-		}
-		else
-		{
-			passwordInput = InputType.Password;
-			passwordIcon = Icons.Material.Filled.VisibilityOff;
-		}
-	}
-
-	private async Task HandleCadastro()
+	private async Task HandleAtualizarCadastro()
 	{
 		isLoading = true;
 		errorMessage = string.Empty;
@@ -166,27 +116,25 @@
 		try
 		{
 			// ✅ Valida campos obrigatórios
-			if (string.IsNullOrEmpty(cadastroRequest.Name) ||
-				string.IsNullOrEmpty(cadastroRequest.Email) ||
-				string.IsNullOrEmpty(cadastroRequest.Password))
+			if (string.IsNullOrEmpty(atualizarCadastroRequest.Name) ||
+				string.IsNullOrEmpty(atualizarCadastroRequest.Email) ||
+				string.IsNullOrEmpty(atualizarCadastroRequest.Cidade) ||
+				string.IsNullOrEmpty(atualizarCadastroRequest.Cep) ||
+				string.IsNullOrEmpty(atualizarCadastroRequest.Logradouro) ||
+				string.IsNullOrEmpty(atualizarCadastroRequest.Estado))
 			{
 				errorMessage = "Preencha todos os campos obrigatórios.";
 				return;
 			}
 
-			// ✅ Valida confirmação de senha
-			if (cadastroRequest.Password != cadastroRequest.ConfirmPassword)
-			{
-				errorMessage = "As senhas não conferem.";
-				return;
-			}
+			
 
-			var sucesso = await AuthService.CadastroAsync(cadastroRequest);
+			var sucesso = await AuthService.AtualizarCadastroAsync(atualizarCadastroRequest);
 
-			if (sucesso)
+			if (sucesso != null	)
 				Navigation.NavigateTo("/login");
 			else
-				errorMessage = "Erro ao realizar cadastro. Tente novamente.";
+				errorMessage = "Erro ao realizar atualização. Tente novamente.";
 		}
 		catch (Exception)
 		{

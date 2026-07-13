@@ -33,6 +33,15 @@ public class AuthService : IAuthService
         return null;
     }
 
+    public async Task<AtualizarCadastroResonse> AtualizarCadastroAsync(AtualizarCadastroRequest atualizarCadastroRequest)
+    {
+        var response = await _client.PutAsJsonAsync("api/User/atualizar", atualizarCadastroRequest);
+        if (response.IsSuccessStatusCode)
+            return await response.Content.ReadFromJsonAsync<AtualizarCadastroResonse>();
+
+        return null;
+    }
+
     public async Task LogoutAsync()
     {
         await Task.CompletedTask;

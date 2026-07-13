@@ -1,12 +1,13 @@
 ﻿@page "/pixkey"
 @layout MainLayout
+@inject IPixKeyService PixKeyService
+@inject IAuthService AuthService
 
 <div style="padding: 54px;">
     <MudText Typo="Typo.h5" Style="color: white; margin-bottom: 24px;">
         🔑 Chaves Pix
     </MudText>
 
-    @* Lista de chaves existentes *@
     @if (carregandoDados)
     {
         <MudProgressLinear Indeterminate="true" Color="MudBlazor.Color.Info" />
@@ -16,7 +17,6 @@
     }
     else
     {
-        @* Cards das chaves cadastradas *@
         @if (PixKeysCadastradas.Any())
         {
             <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">
@@ -31,21 +31,21 @@
                                   Style="background: rgba(255,255,255,0.05); border: 1px solid rgba(0,212,255,0.2);">
                             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                    <MudIcon Icon="@GetIconeChave(chave.Tipo)"
+                                    <MudIcon Icon="@GetIconeChave(chave.KeyType)"
                                              Style="color: #00d4ff;" />
                                     <div>
                                         <MudText Typo="Typo.caption"
                                                  Style="color: rgba(255,255,255,0.5);">
-                                            @chave.Tipo
+                                            @chave.KeyType
                                         </MudText>
                                         <MudText Style="color: white; font-size: 0.9rem;">
-                                            @chave.Valor
+                                            @chave.KeyValue
                                         </MudText>
                                     </div>
                                 </MudStack>
                                 <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                Style="color: #ff6b6b;"
-                                               OnClick="() => RemoverChave(chave)" />
+                                               OnClick="() => RemoverChave(chave.Id)" />
                             </MudStack>
                         </MudPaper>
                     </MudItem>
@@ -53,7 +53,6 @@
             </MudGrid>
         }
 
-        @* Formulário para nova chave *@
         @if (PixKeysCadastradas.Count < 3)
         {
             <MudPaper Elevation="4" Class="pa-6 rounded-xl"
@@ -78,7 +77,6 @@
                 }
 
                 <MudStack Spacing="4">
-                    @* Tipo da chave *@
                     <MudSelect T="string"
                                @bind-Value="tipoChaveSelecionado"
                                Label="Tipo de Chave"
@@ -91,7 +89,6 @@
                         }
                     </MudSelect>
 
-                    @* Valor da chave *@
                     <MudTextField @bind-Value="valorChave"
                                   Label="@GetLabelChave()"
                                   Variant="Variant.Outlined"
@@ -131,64 +128,70 @@
 </div>
 
 @code {
-    private bool carregandoDados = true;
-    private bool cadastrando = false;
-    private string tipoChaveSelecionado = "CPF";
-    private string valorChave = string.Empty;
-    private string errorMessage = string.Empty;
-    private string successMessage = string.Empty;
+	private bool carregandoDados = true;
+	private bool cadastrando = false;
+	private string tipoChaveSelecionado = "CPF";
+	private string valorChave = string.Empty;
+	private string errorMessage = string.Empty;
+	private string successMessage = string.Empty;
+	private long userId = 1; // futuramente pega do token JWT
 
-    private List<string> tiposDisponiveis = new() { "CPF", "Email", "Telefone" };
+	private List<string> tiposDisponiveis = new() { "CPF", "Email", "Telefone" };
+	private List<RegisterPixKeyResponse> PixKeysCadastradas = new();
 
-    private List<PixKey> PixKeysCadastradas = new();
+	protected override async Task OnInitializedAsync()
+	{
+		//  Carrega chaves da API
+		PixKeysCadastradas = await PixKeyService.GetChavesByUserIdAsync(userId);
+		AtualizarTiposDisponiveis();
+		carregandoDados = false;
+	}
 
-    protected override async Task OnInitializedAsync()
-    {
-        await Task.Delay(1000); // futuramente chama API
-        carregandoDados = false;
-    }
+	private async Task CadastrarChave()
+	{
+		errorMessage = string.Empty;
+		successMessage = string.Empty;
 
-    private async Task CadastrarChave()
-    {
-        errorMessage = string.Empty;
-        successMessage = string.Empty;
+		if (string.IsNullOrEmpty(valorChave))
+		{
+			errorMessage = "Preencha o valor da chave.";
+			return;
+		}
 
-        // ✅ Validação
-        if (string.IsNullOrEmpty(valorChave))
-        {
-            errorMessage = "Preencha o valor da chave.";
-            return;
-        }
+		cadastrando = true;
 
-        // ✅ Verifica tipo duplicado
-        if (PixKeysCadastradas.Any(c => c.Tipo == tipoChaveSelecionado))
-        {
-            errorMessage = $"Você já possui uma chave do tipo {tipoChaveSelecionado}.";
-            return;
-        }
+		try
+		{
+			//  Mapeia string para enum
+			var keyType = tipoChaveSelecionado switch
+			{
+				"CPF" => Fintech.Domain.Enum.PixKeyType.Cpf,
+				"Email" => Fintech.Domain.Enum.PixKeyType.Email,
+				"Telefone" => Fintech.Domain.Enum.PixKeyType.Phone,
+				_ => Fintech.Domain.Enum.PixKeyType.Cpf
+			};
 
-        cadastrando = true;
-
-        try
-        {
-            await Task.Delay(1000); // futuramente chama API
-
-            PixKeysCadastradas.Add(new PixKey
+            var request = new RegisterPixKeyRequest
             {
-                Tipo = tipoChaveSelecionado,
-                Valor = valorChave
-            });
+                UserId = userId,
+                KeyType = keyType,
+                KeyValue = valorChave
+            };
 
-            valorChave = string.Empty;
-            successMessage = "Chave Pix cadastrada com sucesso!";
+            //  Chama a API
+            var resultado = await PixKeyService.CadastrarChaveAsync(request);
 
-            // ✅ Atualiza tipos disponíveis removendo o que já foi cadastrado
-            tiposDisponiveis = new List<string> { "CPF", "Email", "Telefone" }
-                .Where(t => !PixKeysCadastradas.Any(c => c.Tipo == t))
-                .ToList();
-
-            if (tiposDisponiveis.Any())
-                tipoChaveSelecionado = tiposDisponiveis.First();
+            if (resultado != null)
+            {
+                PixKeysCadastradas.Add(resultado);
+                valorChave = string.Empty;
+                successMessage = "Chave Pix cadastrada com sucesso!";
+                AtualizarTiposDisponiveis();
+            }
+            else
+            {
+                errorMessage = "Erro ao cadastrar chave. Tente novamente.";
+            }
         }
         finally
         {
@@ -196,13 +199,20 @@
         }
     }
 
-    private void RemoverChave(PixKey chave)
+    private async Task RemoverChave(long id)
     {
-        PixKeysCadastradas.Remove(chave);
+        var sucesso = await PixKeyService.DeletarChaveAsync(id);
+        if (sucesso)
+        {
+            PixKeysCadastradas.RemoveAll(c => c.Id == id);
+            AtualizarTiposDisponiveis();
+        }
+    }
 
-        // ✅ Devolve o tipo removido para a lista
+    private void AtualizarTiposDisponiveis()
+    {
         tiposDisponiveis = new List<string> { "CPF", "Email", "Telefone" }
-            .Where(t => !PixKeysCadastradas.Any(c => c.Tipo == t))
+            .Where(t => !PixKeysCadastradas.Any(c => c.KeyType == t))
             .ToList();
 
         if (tiposDisponiveis.Any())
@@ -229,13 +239,7 @@
     {
         "CPF" => Icons.Material.Filled.Badge,
         "Email" => Icons.Material.Filled.Email,
-        "Telefone" => Icons.Material.Filled.Phone,
+        "Telefone" or "Phone" => Icons.Material.Filled.Phone,
         _ => Icons.Material.Filled.Key
     };
-
-    public class PixKey
-    {
-        public string Tipo { get; set; } = string.Empty;
-        public string Valor { get; set; } = string.Empty;
-    }
 }

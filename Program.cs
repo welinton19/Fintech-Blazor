@@ -15,6 +15,7 @@ builder.Services.AddScoped(sp => new HttpClient
 });
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IPixKeyService, PixKeyService>();
 builder.Services.AddHttpClient<IAwesomeApiService, AwesomeApiService>( client => 
 {
     client.BaseAddress = new Uri("https://economia.awesomeapi.com.br/");

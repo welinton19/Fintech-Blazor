@@ -6,6 +6,7 @@ public interface IAuthService
 {
     Task<LoginResponse> LoginAsync(LoginRequest loginRequest);
     Task<bool> CadastroAsync(CadastroRequest cadastroRequest);
+    Task<AtualizarCadastroResonse> AtualizarCadastroAsync(AtualizarCadastroRequest atualizarCadastroRequest);
     Task LogoutAsync();
     Task<bool> IsAuthenticatedAsync();
 }
